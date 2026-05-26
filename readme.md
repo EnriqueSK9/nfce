@@ -1,6 +1,37 @@
 # NFCE
 Este projeto lê o qr-code de notas fiscais e tenta(best-effort) extrair os dados das compras usando webscrapping.
 
+```python
+{
+  "produtos": [
+    {
+      "nome": str,
+      "codigo": str,
+      "unidade": str,
+      "quantidade": float,
+      "valor_unidade": float,
+      "valor": float,
+    },
+  ],
+  "pagamentos": [
+    {
+      "forma": str,
+      "valor": float,
+    },
+  ],
+  "dados": {
+      "cpf": str,
+      "cnpj": str,
+      "comercio": str,
+      "endereco": str,
+      "emissao": int,
+  },
+  "url": str,
+  "chave_acesso": str,
+  "tributos": float,
+}
+```
+
 ## TO-DO
 - [ ] Core
   - [x] Ler pasta de qrcodes

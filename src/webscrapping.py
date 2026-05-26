@@ -1,6 +1,7 @@
 from lxml import html
 import requests
 from lxml import html
+import locale
 
 def limpa_texto(input:str|list[str]) -> str|list[str]:
     def limpa(s:str):
@@ -11,7 +12,49 @@ def limpa_texto(input:str|list[str]) -> str|list[str]:
     return [limpa(s) for s in input if s.strip() ]
 
 
-def extrai_produtos(pagina_html:html) -> dict[str,str] | str:
+def formata_numero(value: str) -> float:
+    value = value.strip()
+
+    if "," in value and "." in value:
+        if value.rfind(",") > value.rfind("."):
+            # 1.234,56
+            value = value.replace(".", "")
+            value = value.replace(",", ".")
+        else:
+            # 1,234.56
+            value = value.replace(",", "")
+    else:
+        value = value.replace(",", ".")
+
+    return float(value)
+
+
+def extrai_numeros(value: str) -> str:
+    return "".join(c for c in value if c.isdigit())
+
+
+def formatar_nota(nota):
+    for produto in nota["produtos"]:
+        produto["quantidade"] = formata_numero(produto["quantidade"])
+        produto["valor_unidade"] = formata_numero(produto["valor_unidade"])
+        produto["valor"] = formata_numero(produto["valor"])
+    
+    for pagamento in nota["pagamentos"]:
+        pagamento["valor"] = formata_numero(pagamento["valor"])
+
+    dados = nota["dados"]
+    dados["cpf"] = extrai_numeros(dados["cpf"])
+    dados["cnpj"] = extrai_numeros(dados["cnpj"])
+
+    nota["tributos"] = formata_numero(nota["tributos"])
+    nota["chave_acesso"] = nota["chave_acesso"].replace(' ','')
+
+
+def validar_nota(nota) -> bool:
+    pass
+
+
+def extrai_produtos(pagina_html:html):
     produtos = []
     tabela_compras = pagina_html.xpath('//*[@id="tabResult"]/tr')
     for linha in tabela_compras:
@@ -33,7 +76,7 @@ def extrai_produtos(pagina_html:html) -> dict[str,str] | str:
     return produtos
 
 
-def extrai_pagametos_tributos(pagina_html:html) -> dict[str,str] | str:
+def extrai_pagametos_tributos(pagina_html:html):
     formas_pagamento = pagina_html.xpath('//*[@id="linhaTotal"]/label/text()')
     valores_pagamento = pagina_html.xpath('//*[@id="linhaTotal"]/span/text()')
     
@@ -57,7 +100,7 @@ def extrai_pagametos_tributos(pagina_html:html) -> dict[str,str] | str:
     return pagamentos, tributos
 
 
-def extrai_dados_chave(pagina_html:html) -> dict[str,str] | str:
+def extrai_dados_chave(pagina_html:html):
     bloco_empresa = pagina_html.xpath('//div[.//div[@id="u20"]][1]')[0]
     bloco_infos = pagina_html.xpath('//div[@id="infos"]')[0]
     
@@ -85,7 +128,7 @@ def extrai_dados_chave(pagina_html:html) -> dict[str,str] | str:
     return dados, chave_acesso
 
 
-def extrai_nota_fiscal(pagina_html:html) -> dict[str,str]:
+def extrai_nota_fiscal(pagina_html:html):
     produtos = extrai_produtos(pagina_html)
     pagamentos, tributos = extrai_pagametos_tributos(pagina_html)
     dados, chave_aceso = extrai_dados_chave(pagina_html)
@@ -99,7 +142,8 @@ def extrai_nota_fiscal(pagina_html:html) -> dict[str,str]:
     }
     return nota_fiscal
 
-def extrai_nota_fiscais(urls:list[str]) -> list[dict[str,float|str]]:
+
+def extrai_nota_fiscais(urls:list[str]):
     notas = []
     for url in urls:
         try:
