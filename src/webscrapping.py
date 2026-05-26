@@ -1,13 +1,8 @@
-from sys import exit
-from pathlib import Path
-from PIL import Image
-from pyzbar.pyzbar import decode
+from lxml import html
 import requests
 from lxml import html
-from pprint import pprint
 
-
-def limpa_string(input:str|list[str]):
+def limpa_texto(input:str|list[str]) -> str|list[str]:
     def limpa(s:str):
         return s.strip().replace('\n','').replace('\t','').replace('\r','').lower()
 
@@ -15,30 +10,6 @@ def limpa_string(input:str|list[str]):
         return limpa(input)
     return [limpa(s) for s in input if s.strip() ]
 
-
-def decodifica_imagem(imagem):
-    if not decode(imagem):
-        return None
-    return decode(imagem)[0].data.decode('utf-8')
-
-
-def extrai_qrcode_arquivos(pasta:str,extensoes:list[str]=[".png",".jpg",".jpeg"]):
-    pasta = Path(pasta)
-    conteudo = []
-    for arquivo in pasta.glob('*'):
-        if not arquivo.suffix.lower() in extensoes:
-            continue
-        imagem = Image.open(arquivo)
-        if not imagem:
-            continue
-        decodificado = decodifica_imagem(imagem)
-        if not decodificado or decodificado in conteudo:
-            continue
-        conteudo.append(decodificado)
-    return conteudo    
-
-
-# Webscrap pipeline
 
 def extrai_produtos(pagina_html:html):
     produtos = []
@@ -51,12 +22,12 @@ def extrai_produtos(pagina_html:html):
         valor_unidade = linha.xpath('.//span[@class="RvlUnit"]/text()')
         valor = linha.xpath('.//span[@class="valor"]/text()')
         produto = {
-            "nome": limpa_string(nome),
-            "codigo": limpa_string(codigo),
-            "quantidade": limpa_string(quantidade),
-            "unidade": limpa_string(unidade),
-            "valor_unidade": limpa_string(valor_unidade),
-            "valor": limpa_string(valor)
+            "nome": limpa_texto(nome),
+            "codigo": limpa_texto(codigo),
+            "quantidade": limpa_texto(quantidade),
+            "unidade": limpa_texto(unidade),
+            "valor_unidade": limpa_texto(valor_unidade),
+            "valor": limpa_texto(valor)
         }
         produtos.append(produto)
     return produtos
@@ -66,8 +37,8 @@ def extrai_pagametos_tributos(pagina_html:html):
     formas_pagamento = pagina_html.xpath('//*[@id="linhaTotal"]/label/text()')
     valores_pagamento = pagina_html.xpath('//*[@id="linhaTotal"]/span/text()')
     
-    formas_pagamento = limpa_string(formas_pagamento)
-    valores_pagamento = limpa_string(valores_pagamento)
+    formas_pagamento = limpa_texto(formas_pagamento)
+    valores_pagamento = limpa_texto(valores_pagamento)
     
     pagamentos = []
     tributos = ''
@@ -104,13 +75,13 @@ def extrai_dados_chave(pagina_html:html):
         emissao = "".join(e)
         break
     dados = {
-        "cpf": limpa_string(cpf),
-        "cnpj": limpa_string(cnpj),
-        "comercio": limpa_string(comercio),
-        "endereco": limpa_string(endereco),
-        "emissao": limpa_string(emissao),
+        "cpf": limpa_texto(cpf),
+        "cnpj": limpa_texto(cnpj),
+        "comercio": limpa_texto(comercio),
+        "endereco": limpa_texto(endereco),
+        "emissao": limpa_texto(emissao),
     }
-    chave_acesso = limpa_string(chave)
+    chave_acesso = limpa_texto(chave)
     return dados, chave_acesso
 
 
@@ -129,27 +100,15 @@ def extrai_nota_fiscal(url,pagina_html:html):
     }
     return nota_fiscal
 
-
-pasta_qrcodes = './notas'
-urls = extrai_qrcode_arquivos(pasta_qrcodes)
-
-if len(urls) == 0:
-    exit()
-
-for url in urls:
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-    except:
-        continue
-    pagina_html = html.fromstring(response.content)
-    nota = extrai_nota_fiscal(url,pagina_html)
-    pprint(nota)
-    print('')
-
-# TODOs:
-# - Formatar dados
-# - Validar os dados
-# - Salvar em csv
-# - Testes
-# - Front End
+def extrai_nota_fiscais(urls:list[str]) -> dict[str,float|str]:
+    notas = []
+    for url in urls:
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+        except:
+            continue
+        pagina_html = html.fromstring(response.content)
+        nota = extrai_nota_fiscais(url,pagina_html)
+        notas.append(nota)
+    return notas
