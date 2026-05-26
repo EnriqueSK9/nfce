@@ -11,7 +11,7 @@ def limpa_texto(input:str|list[str]) -> str|list[str]:
     return [limpa(s) for s in input if s.strip() ]
 
 
-def extrai_produtos(pagina_html:html):
+def extrai_produtos(pagina_html:html) -> dict[str,str] | str:
     produtos = []
     tabela_compras = pagina_html.xpath('//*[@id="tabResult"]/tr')
     for linha in tabela_compras:
@@ -33,7 +33,7 @@ def extrai_produtos(pagina_html:html):
     return produtos
 
 
-def extrai_pagametos_tributos(pagina_html:html):
+def extrai_pagametos_tributos(pagina_html:html) -> dict[str,str] | str:
     formas_pagamento = pagina_html.xpath('//*[@id="linhaTotal"]/label/text()')
     valores_pagamento = pagina_html.xpath('//*[@id="linhaTotal"]/span/text()')
     
@@ -57,7 +57,7 @@ def extrai_pagametos_tributos(pagina_html:html):
     return pagamentos, tributos
 
 
-def extrai_dados_chave(pagina_html:html):
+def extrai_dados_chave(pagina_html:html) -> dict[str,str] | str:
     bloco_empresa = pagina_html.xpath('//div[.//div[@id="u20"]][1]')[0]
     bloco_infos = pagina_html.xpath('//div[@id="infos"]')[0]
     
@@ -85,7 +85,7 @@ def extrai_dados_chave(pagina_html:html):
     return dados, chave_acesso
 
 
-def extrai_nota_fiscal(url,pagina_html:html):
+def extrai_nota_fiscal(pagina_html:html) -> dict[str,str]:
     produtos = extrai_produtos(pagina_html)
     pagamentos, tributos = extrai_pagametos_tributos(pagina_html)
     dados, chave_aceso = extrai_dados_chave(pagina_html)
@@ -95,12 +95,11 @@ def extrai_nota_fiscal(url,pagina_html:html):
         "pagamentos": pagamentos,
         "tributos": tributos,
         "dados": dados,
-        "url": url,
         "chave_acesso": chave_aceso,
     }
     return nota_fiscal
 
-def extrai_nota_fiscais(urls:list[str]) -> dict[str,float|str]:
+def extrai_nota_fiscais(urls:list[str]) -> list[dict[str,float|str]]:
     notas = []
     for url in urls:
         try:
@@ -110,5 +109,6 @@ def extrai_nota_fiscais(urls:list[str]) -> dict[str,float|str]:
             continue
         pagina_html = html.fromstring(response.content)
         nota = extrai_nota_fiscais(url,pagina_html)
+        nota["url"] = url
         notas.append(nota)
     return notas
