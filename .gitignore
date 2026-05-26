@@ -1,3 +1,5 @@
 .venv/
 .git/
 notas/
+*/__pycache__/
+*.pyc
