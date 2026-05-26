@@ -146,3 +146,10 @@ for url in urls:
     nota = extrai_nota_fiscal(url,pagina_html)
     pprint(nota)
     print('')
+
+# TODOs:
+# - Formatar dados
+# - Validar os dados
+# - Salvar em csv
+# - Testes
+# - Front End
