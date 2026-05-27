@@ -24,7 +24,7 @@ Este projeto lê o qr-code de notas fiscais e tenta(best-effort) extrair os dado
       "cnpj": str,
       "comercio": str,
       "endereco": str,
-      "emissao": int,
+      "emissao": unix timestamp,
   },
   "url": str,
   "chave_acesso": str,
