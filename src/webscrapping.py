@@ -35,6 +35,7 @@ def extrai_numeros(value: str) -> str:
 
 def formatar_nota(nota):
     for produto in nota["produtos"]:
+        produto["codigo"] = extrai_numeros(produto["codigo"])
         produto["quantidade"] = formata_numero(produto["quantidade"])
         produto["valor_unidade"] = formata_numero(produto["valor_unidade"])
         produto["valor"] = formata_numero(produto["valor"])
@@ -47,7 +48,7 @@ def formatar_nota(nota):
     dados["cnpj"] = extrai_numeros(dados["cnpj"])
 
     nota["tributos"] = formata_numero(nota["tributos"])
-    nota["chave_acesso"] = nota["chave_acesso"].replace(' ','')
+    nota["chave_acesso"] = extrai_numeros(nota["chave_acesso"])
 
 
 def validar_nota(nota) -> bool:
